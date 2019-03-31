@@ -108,15 +108,28 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     *  Requests permission to use the camera before starting an CameraActivity to capture an image
+     *  and return it to the MainActivity.
+     */
     public void startCamera() {
-        if (PermissionUtils.requestPermission(
+        boolean permissionGranted = PermissionUtils.requestPermission(
                 this,
                 CAMERA_PERMISSIONS_REQUEST,
                 Manifest.permission.READ_EXTERNAL_STORAGE,
-                Manifest.permission.CAMERA)) {
+                Manifest.permission.CAMERA);
+
+        if (permissionGranted) {
+            // Create an intent to capture an image
             Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-            Uri photoUri = FileProvider.getUriForFile(this, getApplicationContext().getPackageName() + ".provider", getCameraFile());
+            // Create a new file to store the returned image
+            File cameraFile = getCameraFile();
+
+            // Retrieve the URI for the camera file. The authority is defined in the AndroidManifest
+            Uri photoUri = FileProvider.getUriForFile(this, getApplicationContext().getPackageName() + ".provider", cameraFile);
+            // Tell the intent this image will be written to a file
             intent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
+            // Grant permission to read the file's URI after the data is returned
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             startActivityForResult(intent, CAMERA_IMAGE_REQUEST);
         }
@@ -130,9 +143,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        // if(data == null) return
-        // if(isGalleryRequest(requestcode, resultCode)
-        // if(isCameraRequst
         if (requestCode == GALLERY_IMAGE_REQUEST && resultCode == RESULT_OK && data != null) {
             uploadImage(data.getData());
         } else if (requestCode == CAMERA_IMAGE_REQUEST && resultCode == RESULT_OK) {
