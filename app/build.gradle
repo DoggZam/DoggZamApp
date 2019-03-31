@@ -31,6 +31,11 @@ android {
             exclude 'google/protobuf/wrappers.proto'
         }
     }
+
+
+    configurations.all {
+        exclude group: 'com.google.guava', module: 'listenablefuture'
+    }
 }
 
 dependencies {
