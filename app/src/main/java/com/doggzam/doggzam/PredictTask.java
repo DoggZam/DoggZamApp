@@ -33,14 +33,10 @@ public class PredictTask extends AsyncTask<String, Void, String> {
 
     private static final Integer JSON_RAW_RESOURCE_ID = R.raw.doggzamapp; // example: R.raw.workshopvision;
 
-    private final TaskInteractionListener listener;
+    private final MainActivityInteraction listener;
     private final WeakReference<Context> weakReference;
 
-    interface TaskInteractionListener {
-        void onInteraction(String text);
-    }
-
-    PredictTask(TaskInteractionListener listener, WeakReference<Context> weakReference) {
+    PredictTask(MainActivityInteraction listener, WeakReference<Context> weakReference) {
         this.listener = listener;
         this.weakReference = weakReference;
     }
@@ -49,7 +45,7 @@ public class PredictTask extends AsyncTask<String, Void, String> {
     protected void onPreExecute() {
         super.onPreExecute();
         // TODO: 3/4/2019 interface back to MainActivity to update imageDetails
-        listener.onInteraction("Analysing image...");
+        listener.setImageDetailsText("Analysing image...");
     }
 
 
@@ -92,6 +88,7 @@ public class PredictTask extends AsyncTask<String, Void, String> {
             ModelName name = ModelName.of(projectId, computeRegion, modelId);
 
             InputStream inputStreamImage = weakReference.get().getContentResolver().openInputStream(uri);
+            assert inputStreamImage != null;
             byte[] bytes = IoUtils.toByteArray(inputStreamImage);
             ByteString content = ByteString.copyFrom(bytes);
             Image image = Image.newBuilder().setImageBytes(content).build();
@@ -105,15 +102,15 @@ public class PredictTask extends AsyncTask<String, Void, String> {
             // Perform the AutoML Prediction request
             PredictResponse response = predictionClient.predict(name, examplePayload, params);
 
-            String res = "";
-            res += "Prediction results:";
+            StringBuilder res = new StringBuilder();
+            res.append("Prediction results:");
             for (AnnotationPayload annotationPayload : response.getPayloadList()) {
-                res += "\nPredicted class name: " + annotationPayload.getDisplayName();
-                res += "\nPredicted class score: " + annotationPayload.getClassification().getScore();
+                res.append("\nPredicted class name: ").append(annotationPayload.getDisplayName());
+                res.append("\nPredicted class score: ").append(annotationPayload.getClassification().getScore());
             }
 
-            Log.d("automl", res);
-            return res;
+            Log.d("automl", res.toString());
+            return res.toString();
         } catch (IOException e) {
             e.printStackTrace();
             return e.toString();
@@ -122,6 +119,6 @@ public class PredictTask extends AsyncTask<String, Void, String> {
 
     @Override
     protected void onPostExecute(String result) {
-        listener.onInteraction(result);
+        listener.setImageDetailsText(result);
     }
 }

@@ -24,8 +24,8 @@ import java.util.ArrayList;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-public class PermissionUtils {
-    public static boolean requestPermission(
+class PermissionUtils {
+    static boolean requestPermission(
             Activity activity, int requestCode, String... permissions) {
         boolean granted = true;
         ArrayList<String> permissionsNeeded = new ArrayList<>();
@@ -50,7 +50,7 @@ public class PermissionUtils {
     }
 
 
-    public static boolean permissionGranted(
+    static boolean permissionGranted(
             int requestCode, int permissionCode, int[] grantResults) {
         if (requestCode == permissionCode) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {

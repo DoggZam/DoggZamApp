@@ -10,16 +10,13 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.ref.WeakReference;
 
 import androidx.annotation.NonNull;
@@ -27,17 +24,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.FileProvider;
 
-public class MainActivity extends AppCompatActivity implements PredictTask.TaskInteractionListener {
-
-    // TODO: insert project info
-    private static final String COMPUTE_REGION = "us-central1"; // example: "us-central1";
-    private static final String PROJECT_ID = "dogg-zam-app"; // example: "workshop-vision";
-    private static final String MODEL_ID = "ICN6473335258590864622"; // example: "ICN293500301081240869";
-    private static final String SCORE_THRESHOLD = "0.5"; // example: "0.7";
+public class MainActivity extends AppCompatActivity implements MainActivityInteraction {
 
     public static final String FILE_NAME = "temp.jpg";
 
-    private static final String TAG = MainActivity.class.getSimpleName();
     private static final int GALLERY_PERMISSIONS_REQUEST = 0;
     private static final int GALLERY_IMAGE_REQUEST = 1;
     public static final int CAMERA_PERMISSIONS_REQUEST = 2;
@@ -124,11 +114,12 @@ public class MainActivity extends AppCompatActivity implements PredictTask.TaskI
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        WeakReference<Context> weakReference = new WeakReference<Context>(this);
         if (requestCode == GALLERY_IMAGE_REQUEST && resultCode == RESULT_OK && data != null) {
-            uploadImage(data.getData());
+            Utils.uploadImage(data.getData(), this, weakReference);
         } else if (requestCode == CAMERA_IMAGE_REQUEST && resultCode == RESULT_OK) {
             Uri photoUri = FileProvider.getUriForFile(this, getApplicationContext().getPackageName() + ".provider", getCameraFile());
-            uploadImage(photoUri);
+            Utils.uploadImage(photoUri, this, weakReference);
         }
     }
 
@@ -150,61 +141,14 @@ public class MainActivity extends AppCompatActivity implements PredictTask.TaskI
         }
     }
 
-    public void uploadImage(Uri imageUri) {
-
-        if (imageUri != null) {
-            try {
-                // scale the image to save on bandwidth
-                Bitmap bitmap = scaleBitmapDown(
-                        MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri),
-                        1200);
-
-                mMainImage.setImageBitmap(bitmap);
-                findViewById(R.id.image_background).setVisibility(View.VISIBLE);
-
-                if (PROJECT_ID != null && COMPUTE_REGION != null && MODEL_ID != null && SCORE_THRESHOLD != null && imageUri != null) {
-                    WeakReference<Context> weakReference = new WeakReference<Context>(this);
-                    PredictTask predictTask = new PredictTask(this, weakReference);
-                    predictTask.execute(PROJECT_ID, COMPUTE_REGION, MODEL_ID, SCORE_THRESHOLD, imageUri.toString());
-                } else {
-                    mImageDetails.setText("ERROR: null prediction parameter.");
-                    Log.e("automl", "ERROR: null prediction parameter.");
-                }
-            } catch (IOException e) {
-                Log.d(TAG, "Image picking failed because " + e.getMessage());
-                Toast.makeText(this, R.string.image_picker_error, Toast.LENGTH_LONG).show();
-            }
-        } else {
-            Log.d(TAG, "Image picker gave us a null image.");
-            Toast.makeText(this, R.string.image_picker_error, Toast.LENGTH_LONG).show();
-        }
-    }
-
-    public Bitmap scaleBitmapDown(Bitmap bitmap, int maxDimension) {
-
-        int originalWidth = bitmap.getWidth();
-        int originalHeight = bitmap.getHeight();
-        int resizedWidth = maxDimension;
-        int resizedHeight = maxDimension;
-
-        if (originalHeight > originalWidth) {
-            resizedHeight = maxDimension;
-            resizedWidth = (int) (resizedHeight * (float) originalWidth / (float) originalHeight);
-        } else if (originalWidth > originalHeight) {
-            resizedWidth = maxDimension;
-            resizedHeight = (int) (resizedWidth * (float) originalHeight / (float) originalWidth);
-        } else if (originalHeight == originalWidth) {
-            resizedHeight = maxDimension;
-            resizedWidth = maxDimension;
-        }
-        return Bitmap.createScaledBitmap(bitmap, resizedWidth, resizedHeight, false);
-    }
-
     @Override
-    public void onInteraction(String text) {
+    public void setImageDetailsText(String text) {
         mImageDetails.setText(text);
     }
 
-
-
+    @Override
+    public void setMainImageBitmap(Bitmap bitmap) {
+        mMainImage.setImageBitmap(bitmap);
+        findViewById(R.id.image_background).setVisibility(View.VISIBLE);
+    }
 }
