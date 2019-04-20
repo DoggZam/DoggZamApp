@@ -29,7 +29,7 @@ import java.util.Map;
 
 import io.grpc.internal.IoUtils;
 
-public class PredictTask extends AsyncTask<String, Void, String> {
+public class PredictTask extends AsyncTask<String, Void, Map<String, String>> {
 
     private static final Integer JSON_RAW_RESOURCE_ID = R.raw.doggzamapp; // example: R.raw.workshopvision;
 
@@ -45,12 +45,12 @@ public class PredictTask extends AsyncTask<String, Void, String> {
     protected void onPreExecute() {
         super.onPreExecute();
         // TODO: 3/4/2019 interface back to MainActivity to update imageDetails
-        listener.setImageDetailsText("Analysing image...");
+        listener.setInfoText("Analysing image...");
     }
 
 
     @Override
-    protected String doInBackground(String... predictParams) {
+    protected Map<String, String> doInBackground(String... predictParams) {
         try {
             String projectId = predictParams[0];
             String computeRegion = predictParams[1];
@@ -102,23 +102,34 @@ public class PredictTask extends AsyncTask<String, Void, String> {
             // Perform the AutoML Prediction request
             PredictResponse response = predictionClient.predict(name, examplePayload, params);
 
-            StringBuilder res = new StringBuilder();
-            res.append("Prediction results:");
-            for (AnnotationPayload annotationPayload : response.getPayloadList()) {
-                res.append("\nPredicted class name: ").append(annotationPayload.getDisplayName());
-                res.append("\nPredicted class score: ").append(annotationPayload.getClassification().getScore());
-            }
 
-            Log.d("automl", res.toString());
-            return res.toString();
+            Map<String, String> results = new HashMap<>();
+            for (AnnotationPayload annotationPayload : response.getPayloadList()) {
+                String breed = annotationPayload.getDisplayName();
+                String formattedBreed = breed.toUpperCase().charAt(0) + breed.substring(1);
+                results.put("Breed", formattedBreed);
+
+                float confidence = annotationPayload.getClassification().getScore() * 100;
+                int confidenceInt = (int) confidence;
+                String confidenceString = String.valueOf(confidenceInt) + "%";
+                results.put("Confidence", confidenceString);
+            }
+            Log.d("PredictTask", "doInBackground: " + results.toString());
+            predictionClient.shutdown();
+            return results;
         } catch (IOException e) {
             e.printStackTrace();
-            return e.toString();
+            Log.d("PredictTask", "doInBackground: " + e.getMessage());
+            return null;
         }
     }
 
     @Override
-    protected void onPostExecute(String result) {
-        listener.setImageDetailsText(result);
+    protected void onPostExecute(Map results) {
+        // Set values for Confidence and breed
+        if (!results.isEmpty())
+            listener.setDetailsText(results);
+        else
+            listener.setInfoText("Error. Try analysing a new image.");
     }
 }

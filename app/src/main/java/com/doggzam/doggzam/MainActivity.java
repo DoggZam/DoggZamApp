@@ -18,6 +18,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
+import java.util.Map;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -33,7 +34,11 @@ public class MainActivity extends AppCompatActivity implements MainActivityInter
     public static final int CAMERA_PERMISSIONS_REQUEST = 2;
     public static final int CAMERA_IMAGE_REQUEST = 3;
 
-    private TextView mImageDetails;
+    private TextView tvInfo;
+    private TextView tvConfidence;
+    private TextView tvBreed;
+    private TextView tvBreedLabel;
+    private TextView tvConfidenceLabel;
     private ImageView mMainImage;
 
     @Override
@@ -65,7 +70,11 @@ public class MainActivity extends AppCompatActivity implements MainActivityInter
             }
         });
 
-        mImageDetails = findViewById(R.id.image_details);
+        tvInfo = findViewById(R.id.tv_info);
+        tvConfidenceLabel = findViewById(R.id.tv_confidence_label);
+        tvConfidence = findViewById(R.id.tv_confidence_value);
+        tvBreedLabel = findViewById(R.id.tv_breed_label);
+        tvBreed = findViewById(R.id.tv_breed_value);
         mMainImage = findViewById(R.id.main_image);
     }
 
@@ -142,13 +151,39 @@ public class MainActivity extends AppCompatActivity implements MainActivityInter
     }
 
     @Override
-    public void setImageDetailsText(String text) {
-        mImageDetails.setText(text);
+    public void setInfoText(String text) {
+        tvInfo.setText(text);
+        hideDetails();
     }
 
     @Override
     public void setMainImageBitmap(Bitmap bitmap) {
         mMainImage.setImageBitmap(bitmap);
         findViewById(R.id.image_background).setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public void setDetailsText(Map results) {
+        // Set values for Confidence and breed
+        tvConfidence.setText((String) results.get("Confidence"));
+        tvBreed.setText((String) results.get("Breed"));
+        // Show Details
+        showDetails();
+    }
+
+    private void hideDetails() {
+        tvConfidenceLabel.setVisibility(View.INVISIBLE);
+        tvConfidence.setVisibility(View.INVISIBLE);
+        tvBreedLabel.setVisibility(View.INVISIBLE);
+        tvBreed.setVisibility(View.INVISIBLE);
+        tvInfo.setVisibility(View.VISIBLE);
+    }
+
+    private void showDetails() {
+        tvInfo.setVisibility(View.INVISIBLE);
+        tvConfidenceLabel.setVisibility(View.VISIBLE);
+        tvConfidence.setVisibility(View.VISIBLE);
+        tvBreedLabel.setVisibility(View.VISIBLE);
+        tvBreed.setVisibility(View.VISIBLE);
     }
 }
